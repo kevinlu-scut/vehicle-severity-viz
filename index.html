@@ -24,23 +24,19 @@
 
     body {
       margin: 0;
-      min-height: 100vh;
+      min-height: 100%;
       color: var(--text);
       background: var(--bg);
     }
 
     .wrap {
-      width: min(1180px, 100%);
+      width: min(1060px, 100%);
       margin: 0 auto;
-      padding: 34px 28px 28px;
+      padding: 18px 20px 16px;
     }
 
     header {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
-      gap: 18px;
-      align-items: end;
-      margin-bottom: 14px;
+      margin-bottom: 10px;
     }
 
     .eyebrow {
@@ -62,9 +58,9 @@
     }
 
     h1 {
-      margin: 8px 0 0;
+      margin: 6px 0 0;
       color: var(--accent);
-      font-size: clamp(28px, 4vw, 46px);
+      font-size: clamp(24px, 3vw, 34px);
       line-height: 1.12;
       letter-spacing: 0;
       font-weight: 900;
@@ -74,44 +70,16 @@
       margin: 12px 0 0;
       max-width: 760px;
       color: var(--muted);
-      font-size: 15px;
-      line-height: 1.65;
-    }
-
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(3, 112px);
-      gap: 10px;
-    }
-
-    .stat {
-      min-height: 78px;
-      padding: 12px 14px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      background: rgba(255,255,255,.72);
-    }
-
-    .stat strong {
-      display: block;
-      color: var(--accent);
-      font-size: 28px;
-      line-height: 1;
-      margin-bottom: 8px;
-    }
-
-    .stat span {
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.35;
+      font-size: 13px;
+      line-height: 1.55;
     }
 
     .toolbar {
       display: grid;
       grid-template-columns: 1.2fr 1fr 1fr;
-      gap: 10px;
-      padding: 12px;
-      margin-bottom: 14px;
+      gap: 8px;
+      padding: 8px;
+      margin-bottom: 10px;
       border: 1px solid var(--line);
       border-radius: 8px;
       background: rgba(255,255,255,.68);
@@ -120,7 +88,7 @@
     .control {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 5px;
       min-width: 0;
     }
 
@@ -140,7 +108,7 @@
     }
 
     button {
-      min-height: 38px;
+      min-height: 30px;
       border: 0;
       border-radius: 6px;
       color: var(--text);
@@ -164,7 +132,7 @@
       grid-template-columns: 1fr 42px;
       gap: 10px;
       align-items: center;
-      min-height: 38px;
+      min-height: 30px;
     }
 
     input[type="range"] {
@@ -190,14 +158,14 @@
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
-      gap: 16px;
-      padding: 16px 18px 0;
+      gap: 12px;
+      padding: 10px 14px 0;
     }
 
     .note {
       color: var(--muted);
-      font-size: 13px;
-      line-height: 1.55;
+      font-size: 12px;
+      line-height: 1.45;
     }
 
     .legend {
@@ -226,8 +194,8 @@
     #bubbleChart {
       display: block;
       width: 100%;
-      height: min(72vh, 760px);
-      min-height: 560px;
+      height: clamp(430px, 52vw, 560px);
+      min-height: 430px;
     }
 
     .bubble {
@@ -293,22 +261,14 @@
         grid-template-columns: 1fr;
       }
 
-      .stats {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-      }
-
       #bubbleChart {
-        min-height: 520px;
+        min-height: 430px;
       }
     }
 
     @media (max-width: 560px) {
       .wrap {
         padding: 16px;
-      }
-
-      .stats {
-        grid-template-columns: 1fr;
       }
 
       .chart-head {
@@ -328,11 +288,6 @@
         <div class="eyebrow">车辆类型</div>
         <h1>车辆类型与伤亡程度</h1>
         <p class="lead">圆越大代表事故数量越多；颜色由浅青到橙红，表示伤残/死亡占比逐渐升高。</p>
-      </div>
-      <div class="stats">
-        <div class="stat"><strong id="statTotal">-</strong><span>事故案例</span></div>
-        <div class="stat"><strong id="statCombos">-</strong><span>交通工具组合</span></div>
-        <div class="stat"><strong id="statRisk">-</strong><span>最高伤残/死亡率</span></div>
       </div>
     </header>
 
@@ -418,10 +373,6 @@
     }
 
     function updateStats(rows) {
-      const highRisk = rows.reduce((best, row) => row.severeRate > best.severeRate ? row : best, rows[0] || DATA.insights.highRisk);
-      document.getElementById("statTotal").textContent = fmtNum.format(DATA.total);
-      document.getElementById("statCombos").textContent = fmtNum.format(rows.length);
-      document.getElementById("statRisk").textContent = fmtPct.format(highRisk.severeRate);
       document.getElementById("minCountValue").textContent = state.minCount;
     }
 
@@ -439,7 +390,7 @@
       const rect = svg.getBoundingClientRect();
       const width = Math.max(360, rect.width || 900);
       const height = Math.max(460, rect.height || 600);
-      const pad = { left: 64, right: 48, top: 56, bottom: 62 };
+      const pad = { left: 48, right: 30, top: 36, bottom: 44 };
       const maxCount = Math.max(...DATA.combos.map(d => d.count));
       const maxMetric = Math.max(...rows.map(metricRadius), 1);
       const xMax = Math.max(...DATA.combos.map(d => d.share), .01);
@@ -454,13 +405,13 @@
       `;
 
       rows.forEach((row, i) => {
-        const radius = 17 + Math.sqrt(metricRadius(row) / maxMetric) * 50;
+        const radius = 13 + Math.sqrt(metricRadius(row) / maxMetric) * 40;
         const x = pad.left + (row.share / xMax) * (width - pad.left - pad.right - radius * .8);
         const y = height - pad.bottom - (row.severeRate / yMax) * (height - pad.top - pad.bottom - radius * .8);
         const wobble = Math.sin((i + 1) * 1.8) * 16;
         row._x = Math.max(pad.left + radius, Math.min(width - pad.right - radius, x + wobble));
         row._y = Math.max(pad.top + radius, Math.min(height - pad.bottom - radius, y - wobble / 2));
-        row._r = Math.min(radius, Math.sqrt(row.count / maxCount) * 55 + 18);
+        row._r = Math.min(radius, Math.sqrt(row.count / maxCount) * 42 + 13);
       });
 
       for (let iter = 0; iter < 80; iter++) {
@@ -498,13 +449,13 @@
 
         const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
         label.textContent = shortName(row.combo);
-        label.setAttribute("font-size", Math.max(10, Math.min(17, row._r / 3.2)));
+        label.setAttribute("font-size", Math.max(9, Math.min(14, row._r / 3.1)));
         label.setAttribute("y", "-5");
         g.appendChild(label);
 
         const sub = document.createElementNS("http://www.w3.org/2000/svg", "text");
         sub.textContent = `${row.count}起 | ${fmtPct.format(row.severeRate)}`;
-        sub.setAttribute("font-size", Math.max(9, Math.min(13, row._r / 4.4)));
+        sub.setAttribute("font-size", Math.max(8, Math.min(11, row._r / 4.3)));
         sub.setAttribute("y", Math.max(10, row._r / 3.5));
         sub.setAttribute("fill-opacity", ".78");
         g.appendChild(sub);

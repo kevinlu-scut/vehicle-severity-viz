@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>交通工具类型组合气泡图</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #fbf7ec;
+      --paper: #ffffff;
+      --paper-soft: #fff8ec;
+      --line: #eadbc4;
+      --text: #3f3f3f;
+      --muted: #77736c;
+      --soft: #a59b8c;
+      --accent: #ff6a2a;
+      --accent-soft: #ffe4c7;
+      --teal: #459dab;
+      font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100%;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    .wrap {
+      width: min(1060px, 100%);
+      margin: 0 auto;
+      padding: 18px 20px 16px;
+    }
+
+    header {
+      margin-bottom: 10px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 34px;
+      height: 2px;
+      border-radius: 999px;
+      background: var(--accent);
+    }
+
+    h1 {
+      margin: 6px 0 0;
+      color: var(--accent);
+      font-size: clamp(24px, 3vw, 34px);
+      line-height: 1.12;
+      letter-spacing: 0;
+      font-weight: 900;
+    }
+
+    .lead {
+      margin: 12px 0 0;
+      max-width: 760px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr 1fr;
+      gap: 8px;
+      padding: 8px;
+      margin-bottom: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255,255,255,.68);
+    }
+
+    .control {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    .control label {
+      color: var(--soft);
+      font-size: 12px;
+    }
+
+    .segmented {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+      padding: 4px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper-soft);
+    }
+
+    button {
+      min-height: 30px;
+      border: 0;
+      border-radius: 6px;
+      color: var(--text);
+      background: transparent;
+      cursor: pointer;
+      font: inherit;
+    }
+
+    button:hover {
+      background: var(--accent-soft);
+    }
+
+    button.active {
+      background: var(--accent);
+      color: #fff;
+      font-weight: 900;
+    }
+
+    .slider-row {
+      display: grid;
+      grid-template-columns: 1fr 42px;
+      gap: 10px;
+      align-items: center;
+      min-height: 30px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    .slider-value {
+      text-align: right;
+      color: var(--accent);
+      font-weight: 900;
+    }
+
+    .chart-panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+      box-shadow: 0 12px 30px rgba(174, 124, 70, .12);
+      overflow: hidden;
+    }
+
+    .chart-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 14px 0;
+    }
+
+    .note {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .legend i {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    #bubbleChart {
+      display: block;
+      width: 100%;
+      height: clamp(430px, 52vw, 560px);
+      min-height: 430px;
+    }
+
+    .bubble {
+      cursor: pointer;
+      filter: drop-shadow(0 8px 12px rgba(66, 99, 107, .18));
+      transition: opacity .18s ease;
+    }
+
+    .bubble circle {
+      stroke: rgba(255,255,255,.92);
+      stroke-width: 1.5;
+    }
+
+    .bubble.selected circle {
+      stroke: var(--accent);
+      stroke-width: 3;
+    }
+
+    .bubble text {
+      pointer-events: none;
+      fill: #263235;
+      font-weight: 900;
+      text-anchor: middle;
+      dominant-baseline: central;
+      letter-spacing: 0;
+    }
+
+    .axis-label {
+      fill: #9a9286;
+      font-size: 12px;
+    }
+
+    .tooltip {
+      position: fixed;
+      z-index: 20;
+      pointer-events: none;
+      display: none;
+      max-width: 300px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255,255,255,.96);
+      color: var(--text);
+      box-shadow: 0 12px 34px rgba(174, 124, 70, .22);
+      transform: translate(-50%, calc(-100% - 14px));
+    }
+
+    .tooltip strong {
+      display: block;
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+
+    .tooltip span {
+      display: block;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 12px;
+    }
+
+    @media (max-width: 860px) {
+      header, .toolbar {
+        grid-template-columns: 1fr;
+      }
+
+      #bubbleChart {
+        min-height: 430px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .wrap {
+        padding: 16px;
+      }
+
+      .chart-head {
+        flex-direction: column;
+      }
+
+      .legend {
+        justify-content: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <div class="eyebrow">车辆类型</div>
+        <h1>车辆类型与伤亡程度</h1>
+        <p class="lead">圆越大代表事故数量越多；颜色由浅青到橙红，表示伤残/死亡占比逐渐升高。</p>
+      </div>
+    </header>
+
+    <section class="toolbar" aria-label="气泡图控制">
+      <div class="control">
+        <label>气泡尺寸</label>
+        <div class="segmented" id="metricButtons">
+          <button type="button" class="active" data-metric="share">案例占比</button>
+          <button type="button" data-metric="severeRate">伤残/死亡</button>
+          <button type="button" data-metric="deathRate">死亡率</button>
+        </div>
+      </div>
+      <div class="control">
+        <label>涉及方数量</label>
+        <div class="segmented" id="partyButtons">
+          <button type="button" class="active" data-party="all">全部</button>
+          <button type="button" data-party="2">2 方</button>
+          <button type="button" data-party="3">3 方</button>
+        </div>
+      </div>
+      <div class="control">
+        <label>最小案例数</label>
+        <div class="slider-row">
+          <input id="minCount" type="range" min="1" max="30" value="1">
+          <span class="slider-value" id="minCountValue">1</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="chart-panel">
+      <div class="chart-head">
+        <div class="note">横向越靠右，案例占比越高；纵向越靠上，伤残/死亡占比越高。点击气泡可锁定高亮，悬停查看具体数据。</div>
+        <div class="legend" id="legend"></div>
+      </div>
+      <svg id="bubbleChart" role="img" aria-label="交通工具类型组合事故气泡图"></svg>
+    </section>
+  </div>
+  <div class="tooltip" id="tooltip"></div>
+
+  <script>
+    const DATA = {"total": 375, "severityOrder": ["0_无伤亡（最轻微）", "1_轻伤", "2_伤残", "3_死亡（最严重）"], "severityLabels": {"0_无伤亡（最轻微）": "无伤亡", "1_轻伤": "轻伤", "2_伤残": "伤残", "3_死亡（最严重）": "死亡"}, "severityColors": {"0_无伤亡（最轻微）": "#dcecef", "1_轻伤": "#9fcbd3", "2_伤残": "#5faebb", "3_死亡（最严重）": "#ff6a2a"}, "severityTotals": {"0_无伤亡（最轻微）": 71, "1_轻伤": 227, "2_伤残": 36, "3_死亡（最严重）": 41}, "partyTotals": {"2": 371, "3": 4}, "combos": [{"combo": "电动自行车+电动自行车", "vehicles": ["电动自行车", "电动自行车"], "count": 119, "share": 0.31733333333333336, "parties": [2], "partyLabel": "2", "severity": {"0_无伤亡（最轻微）": 15, "1_轻伤": 89, "2_伤残": 6, "3_死亡（最严重）": 9}, "deathCount": 9, "disabilityCount": 6, "severeCount": 15, "deathRate": 0.07563025210084033, "severeRate": 0.12605042016806722, "weightedSeverity": 1.0756302521008403, "rankByCount": 1, "rankByRisk": 8}, {"combo": "电动自行车+小型轿车", "vehicles": ["电动自行车", "小型轿车"], "count": 83, "share": 0.22133333333333333, "parties": [2], "partyLabel": "2", "severity": {"0_无伤亡（最轻微）": 27, "1_轻伤": 43, "2_伤残": 7, "3_死亡（最严重）": 6}, "deathCount": 6, "disabilityCount": 7, "severeCount": 13, "deathRate": 0.07228915662650602, "severeRate": 0.1566265060240964, "weightedSeverity": 0.9036144578313253, "rankByCount": 2, "rankByRisk": 7}, {"combo": "电动自行车+行人", "vehicles": ["电动自行车", "行人"], "count": 38, "share": 0.10133333333333333, "parties": [2], "partyLabel": "2", "severity": {"0_无伤亡（最轻微）": 4, "1_轻伤": 31, "2_伤残": 2, "3_死亡（最严重）": 1}, "deathCount": 1, "disabilityCount": 2, "severeCount": 3, "deathRate": 0.02631578947368421, "severeRate": 0.07894736842105263, "weightedSeverity": 1.0, "rankByCount": 3, "rankByRisk": 9}, {"combo": "电动自行车+摩托车", "vehicles": ["电动自行车", "摩托车"], "count": 34, "share": 0.09066666666666667, "parties": [2], "partyLabel": "2", "severity": {"0_无伤亡（最轻微）": 11, "1_轻伤": 14, "2_伤残": 6, "3_死亡（最严重）": 3}, "deathCount": 3, "disabilityCount": 6, "severeCount": 9, "deathRate": 0.08823529411764706, "severeRate": 0.2647058823529412, "weightedSeverity": 1.0294117647058822, "rankByCount": 4, "rankByRisk": 5}, {"combo": "电动自行车+货车", "vehicles": ["电动自行车", "货车"], "count": 29, "share": 0.07733333333333334, "parties": [2], "partyLabel": "2", "severity": {"0_无伤亡（最轻微）": 0, "1_轻伤": 7, "2_伤残": 6, "3_死亡（最严重）": 16}, "deathCount": 16, "disabilityCount": 6, "severeCount": 22, "deathRate": 0.5517241379310345, "severeRate": 0.7586206896551724, "weightedSeverity": 2.310344827586207, "rankByCount": 5, "rankByRisk": 2}, {"combo": "电动自行车+小型客车", "vehicles": ["电动自行车", "小型客车"], "count": 23, "share": 0.06133333333333333, "parties": [2], "partyLabel": "2", "severity": {"0_无伤亡（最轻微）": 4, "1_轻伤": 11, "2_伤残": 4, "3_死亡（最严重）": 4}, "deathCount": 4, "disabilityCount": 4, "severeCount": 8, "deathRate": 0.17391304347826086, "severeRate": 0.34782608695652173, "weightedSeverity": 1.3478260869565217, "rankByCount": 6, "rankByRisk": 3}, {"combo": "电动自行车+自行车", "vehicles": ["电动自行车", "自行车"], "count": 22, "share": 0.058666666666666666, "parties": [2], "partyLabel": "2", "severity": {"0_无伤亡（最轻微）": 4, "1_轻伤": 14, "2_伤残": 4, "3_死亡（最严重）": 0}, "deathCount": 0, "disabilityCount": 4, "severeCount": 4, "deathRate": 0.0, "severeRate": 0.18181818181818182, "weightedSeverity": 1.0, "rankByCount": 7, "rankByRisk": 6}, {"combo": "电动自行车+三轮车", "vehicles": ["电动自行车", "三轮车"], "count": 14, "share": 0.037333333333333336, "parties": [2], "partyLabel": "2", "severity": {"0_无伤亡（最轻微）": 1, "1_轻伤": 13, "2_伤残": 0, "3_死亡（最严重）": 0}, "deathCount": 0, "disabilityCount": 0, "severeCount": 0, "deathRate": 0.0, "severeRate": 0.0, "weightedSeverity": 0.9285714285714286, "rankByCount": 8, "rankByRisk": 10}, {"combo": "电动自行车+大型普通客车", "vehicles": ["电动自行车", "大型普通客车"], "count": 5, "share": 0.013333333333333334, "parties": [2], "partyLabel": "2", "severity": {"0_无伤亡（最轻微）": 1, "1_轻伤": 4, "2_伤残": 0, "3_死亡（最严重）": 0}, "deathCount": 0, "disabilityCount": 0, "severeCount": 0, "deathRate": 0.0, "severeRate": 0.0, "weightedSeverity": 0.8, "rankByCount": 9, "rankByRisk": 11}, {"combo": "电动自行车+其他车辆", "vehicles": ["电动自行车", "其他车辆"], "count": 3, "share": 0.008, "parties": [2], "partyLabel": "2", "severity": {"0_无伤亡（最轻微）": 1, "1_轻伤": 1, "2_伤残": 1, "3_死亡（最严重）": 0}, "deathCount": 0, "disabilityCount": 1, "severeCount": 1, "deathRate": 0.0, "severeRate": 0.3333333333333333, "weightedSeverity": 1.0, "rankByCount": 10, "rankByRisk": 4}, {"combo": "电动自行车+小型轿车+货车", "vehicles": ["电动自行车", "小型轿车", "货车"], "count": 2, "share": 0.005333333333333333, "parties": [3], "partyLabel": "3", "severity": {"0_无伤亡（最轻微）": 0, "1_轻伤": 0, "2_伤残": 0, "3_死亡（最严重）": 2}, "deathCount": 2, "disabilityCount": 0, "severeCount": 2, "deathRate": 1.0, "severeRate": 1.0, "weightedSeverity": 3.0, "rankByCount": 11, "rankByRisk": 1}, {"combo": "小型客车+摩托车", "vehicles": ["小型客车", "摩托车"], "count": 1, "share": 0.0026666666666666666, "parties": [2], "partyLabel": "2", "severity": {"0_无伤亡（最轻微）": 1, "1_轻伤": 0, "2_伤残": 0, "3_死亡（最严重）": 0}, "deathCount": 0, "disabilityCount": 0, "severeCount": 0, "deathRate": 0.0, "severeRate": 0.0, "weightedSeverity": 0.0, "rankByCount": 12, "rankByRisk": 12}, {"combo": "电动自行车+小型轿车+摩托车", "vehicles": ["电动自行车", "小型轿车", "摩托车"], "count": 1, "share": 0.0026666666666666666, "parties": [3], "partyLabel": "3", "severity": {"0_无伤亡（最轻微）": 1, "1_轻伤": 0, "2_伤残": 0, "3_死亡（最严重）": 0}, "deathCount": 0, "disabilityCount": 0, "severeCount": 0, "deathRate": 0.0, "severeRate": 0.0, "weightedSeverity": 0.0, "rankByCount": 13, "rankByRisk": 13}, {"combo": "电动自行车+小型轿车+自行车", "vehicles": ["电动自行车", "小型轿车", "自行车"], "count": 1, "share": 0.0026666666666666666, "parties": [3], "partyLabel": "3", "severity": {"0_无伤亡（最轻微）": 1, "1_轻伤": 0, "2_伤残": 0, "3_死亡（最严重）": 0}, "deathCount": 0, "disabilityCount": 0, "severeCount": 0, "deathRate": 0.0, "severeRate": 0.0, "weightedSeverity": 0.0, "rankByCount": 14, "rankByRisk": 14}], "insights": {"topCombo": {"combo": "电动自行车+电动自行车", "vehicles": ["电动自行车", "电动自行车"], "count": 119, "share": 0.31733333333333336, "parties": [2], "partyLabel": "2", "severity": {"0_无伤亡（最轻微）": 15, "1_轻伤": 89, "2_伤残": 6, "3_死亡（最严重）": 9}, "deathCount": 9, "disabilityCount": 6, "severeCount": 15, "deathRate": 0.07563025210084033, "severeRate": 0.12605042016806722, "weightedSeverity": 1.0756302521008403, "rankByCount": 1, "rankByRisk": 8}, "highRisk": {"combo": "电动自行车+货车", "vehicles": ["电动自行车", "货车"], "count": 29, "share": 0.07733333333333334, "parties": [2], "partyLabel": "2", "severity": {"0_无伤亡（最轻微）": 0, "1_轻伤": 7, "2_伤残": 6, "3_死亡（最严重）": 16}, "deathCount": 16, "disabilityCount": 6, "severeCount": 22, "deathRate": 0.5517241379310345, "severeRate": 0.7586206896551724, "weightedSeverity": 2.310344827586207, "rankByCount": 5, "rankByRisk": 2}, "severeTotal": 77, "deathTotal": 41}};
+    const state = { metric: "share", party: "all", minCount: 1, selected: DATA.insights.highRisk.combo };
+    const fmtPct = new Intl.NumberFormat("zh-CN", { style: "percent", maximumFractionDigits: 1 });
+    const fmtNum = new Intl.NumberFormat("zh-CN");
+    const svg = document.getElementById("bubbleChart");
+    const tooltip = document.getElementById("tooltip");
+
+    function colorForRisk(rate) {
+      const stops = [
+        [0.00, [205, 226, 231]],
+        [0.18, [112, 185, 197]],
+        [0.36, [63, 156, 171]],
+        [0.76, [255, 106, 42]]
+      ];
+      let a = stops[0], b = stops[stops.length - 1];
+      for (let i = 0; i < stops.length - 1; i++) {
+        if (rate >= stops[i][0] && rate <= stops[i + 1][0]) {
+          a = stops[i];
+          b = stops[i + 1];
+          break;
+        }
+      }
+      const t = Math.max(0, Math.min(1, (rate - a[0]) / (b[0] - a[0] || 1)));
+      const rgb = a[1].map((v, i) => Math.round(v + (b[1][i] - v) * t));
+      return `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+    }
+
+    function filteredCombos() {
+      return DATA.combos.filter(row => {
+        const partyOk = state.party === "all" || row.parties.includes(Number(state.party));
+        return partyOk && row.count >= state.minCount;
+      });
+    }
+
+    function metricRadius(row) {
+      if (state.metric === "share") return row.count;
+      if (state.metric === "severeRate") return Math.max(2, row.severeRate * DATA.total);
+      return Math.max(1, row.deathRate * DATA.total);
+    }
+
+    function shortName(combo) {
+      return combo.replaceAll("电动自行车+", "").replaceAll("+电动自行车", "+电动");
+    }
+
+    function updateStats(rows) {
+      document.getElementById("minCountValue").textContent = state.minCount;
+    }
+
+    function renderLegend() {
+      document.getElementById("legend").innerHTML = DATA.severityOrder.map(key => `
+        <span><i style="background:${DATA.severityColors[key]}"></i>${DATA.severityLabels[key]}</span>
+      `).join("");
+    }
+
+    function renderBubbles() {
+      const rows = filteredCombos();
+      updateStats(rows);
+      renderLegend();
+
+      const rect = svg.getBoundingClientRect();
+      const width = Math.max(360, rect.width || 900);
+      const height = Math.max(460, rect.height || 600);
+      const pad = { left: 48, right: 30, top: 36, bottom: 44 };
+      const maxCount = Math.max(...DATA.combos.map(d => d.count));
+      const maxMetric = Math.max(...rows.map(metricRadius), 1);
+      const xMax = Math.max(...DATA.combos.map(d => d.share), .01);
+      const yMax = Math.max(...DATA.combos.map(d => d.severeRate), .01);
+
+      svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+      svg.innerHTML = `
+        <line x1="${pad.left}" y1="${height - pad.bottom}" x2="${width - pad.right}" y2="${height - pad.bottom}" stroke="#eadbc4" />
+        <line x1="${pad.left}" y1="${pad.top}" x2="${pad.left}" y2="${height - pad.bottom}" stroke="#eadbc4" />
+        <text x="${width - pad.right}" y="${height - 24}" class="axis-label" text-anchor="end">案例占比更高 →</text>
+        <text x="22" y="${pad.top}" class="axis-label" transform="rotate(-90 22 ${pad.top})">伤残/死亡占比更高 →</text>
+      `;
+
+      rows.forEach((row, i) => {
+        const radius = 13 + Math.sqrt(metricRadius(row) / maxMetric) * 40;
+        const x = pad.left + (row.share / xMax) * (width - pad.left - pad.right - radius * .8);
+        const y = height - pad.bottom - (row.severeRate / yMax) * (height - pad.top - pad.bottom - radius * .8);
+        const wobble = Math.sin((i + 1) * 1.8) * 16;
+        row._x = Math.max(pad.left + radius, Math.min(width - pad.right - radius, x + wobble));
+        row._y = Math.max(pad.top + radius, Math.min(height - pad.bottom - radius, y - wobble / 2));
+        row._r = Math.min(radius, Math.sqrt(row.count / maxCount) * 42 + 13);
+      });
+
+      for (let iter = 0; iter < 80; iter++) {
+        for (let i = 0; i < rows.length; i++) {
+          for (let j = i + 1; j < rows.length; j++) {
+            const a = rows[i], b = rows[j];
+            const dx = b._x - a._x;
+            const dy = b._y - a._y;
+            const dist = Math.hypot(dx, dy) || 1;
+            const minDist = a._r + b._r + 10;
+            if (dist < minDist) {
+              const move = (minDist - dist) / 2;
+              const mx = dx / dist * move;
+              const my = dy / dist * move;
+              a._x -= mx; a._y -= my; b._x += mx; b._y += my;
+            }
+          }
+        }
+        rows.forEach(row => {
+          row._x = Math.max(pad.left + row._r, Math.min(width - pad.right - row._r, row._x));
+          row._y = Math.max(pad.top + row._r, Math.min(height - pad.bottom - row._r, row._y));
+        });
+      }
+
+      rows.forEach(row => {
+        const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        g.setAttribute("class", `bubble${row.combo === state.selected ? " selected" : ""}`);
+        g.setAttribute("transform", `translate(${row._x} ${row._y})`);
+
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("r", row._r);
+        circle.setAttribute("fill", colorForRisk(row.severeRate));
+        circle.setAttribute("fill-opacity", ".92");
+        g.appendChild(circle);
+
+        const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        label.textContent = shortName(row.combo);
+        label.setAttribute("font-size", Math.max(9, Math.min(14, row._r / 3.1)));
+        label.setAttribute("y", "-5");
+        g.appendChild(label);
+
+        const sub = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        sub.textContent = `${row.count}起 | ${fmtPct.format(row.severeRate)}`;
+        sub.setAttribute("font-size", Math.max(8, Math.min(11, row._r / 4.3)));
+        sub.setAttribute("y", Math.max(10, row._r / 3.5));
+        sub.setAttribute("fill-opacity", ".78");
+        g.appendChild(sub);
+
+        g.addEventListener("click", () => {
+          state.selected = row.combo;
+          renderBubbles();
+        });
+        g.addEventListener("mousemove", event => showTooltip(event, row));
+        g.addEventListener("mouseleave", hideTooltip);
+        svg.appendChild(g);
+      });
+
+      document.querySelectorAll("#metricButtons button").forEach(btn => btn.classList.toggle("active", btn.dataset.metric === state.metric));
+      document.querySelectorAll("#partyButtons button").forEach(btn => btn.classList.toggle("active", btn.dataset.party === state.party));
+    }
+
+    function showTooltip(event, row) {
+      tooltip.style.display = "block";
+      tooltip.style.left = `${event.clientX}px`;
+      tooltip.style.top = `${event.clientY}px`;
+      tooltip.innerHTML = `
+        <strong>${row.combo}</strong>
+        <span>案例数：${row.count} 起，占全部 ${fmtPct.format(row.share)}</span>
+        <span>伤残/死亡：${row.severeCount} 起，${fmtPct.format(row.severeRate)}</span>
+        <span>死亡：${row.deathCount} 起，${fmtPct.format(row.deathRate)}</span>
+        <span>涉及方数量：${row.partyLabel} 方</span>
+      `;
+    }
+
+    function hideTooltip() {
+      tooltip.style.display = "none";
+    }
+
+    document.getElementById("metricButtons").addEventListener("click", event => {
+      const btn = event.target.closest("button");
+      if (!btn) return;
+      state.metric = btn.dataset.metric;
+      renderBubbles();
+    });
+
+    document.getElementById("partyButtons").addEventListener("click", event => {
+      const btn = event.target.closest("button");
+      if (!btn) return;
+      state.party = btn.dataset.party;
+      renderBubbles();
+    });
+
+    document.getElementById("minCount").addEventListener("input", event => {
+      state.minCount = Number(event.target.value);
+      renderBubbles();
+    });
+
+    window.addEventListener("resize", () => {
+      clearTimeout(window.__bubbleResize);
+      window.__bubbleResize = setTimeout(renderBubbles, 150);
+    });
+
+    renderBubbles();
+  </script>
+</body>
+</html>
